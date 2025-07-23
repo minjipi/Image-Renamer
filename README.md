@@ -1,6 +1,8 @@
-# 🖼️ Image Renamer Pro
-
+# 🖼️ Image Renamer
 > 클라이언트 사이드에서 동작하는 아름다운 이미지 파일명 일괄 변경 도구
+
+<img width="700" alt="Image Renamer Pro - 메인 화면" src="https://github.com/user-attachments/assets/3a5f5a70-1854-4ddb-9ac9-bbc43bd8b745" />
+
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://github.com)
