@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Img Renamer Pro</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: linear-gradient(135deg, #ffa8d6 0%, #ffd1e9 50%, #cfe5b7 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.25) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      text-align: center;
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+      animation: slideIn 0.6s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .header {
+      margin-bottom: 36px;
+    }
+
+    .icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #ffa8d6, #badf93);
+      border-radius: 16px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(255, 168, 214, 0.4);
+    }
+
+    .icon::before {
+      content: "💻";
+      font-size: 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff91e9, #91c7ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #8B7CB8;
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+
+    .form-group {
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: #8B7CB8;
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 16px 20px;
+      border: 2px solid #FFE4F3;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #ffffff;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #ffa8d6;
+      box-shadow: 0 0 0 4px rgba(255, 168, 214, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .pattern-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      justify-content: center;
+    }
+
+    .pattern-btn {
+      background: rgba(255, 168, 214, 0.1);
+      border: 1px solid #ffa8d6;
+      color: #ffa8d6;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .pattern-btn:hover {
+      background: rgba(255, 168, 214, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .pattern-btn.active {
+      background: #ffa8d6;
+      color: white;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      border: 2px dashed #FFE4F3;
+      border-radius: 12px;
+      padding: 40px 20px;
+      background: #FFFBFE;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-input-wrapper:hover {
+      border-color: #ffa8d6;
+      background: #FFF4F9;
+      transform: translateY(-2px);
+    }
+
+    .file-input-wrapper.dragover {
+      border-color: #ffa8d6;
+      background: rgba(255, 168, 214, 0.1);
+      transform: scale(1.02);
+    }
+
+    input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-input-content {
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .file-input-text {
+      font-size: 16px;
+      color: #B794C6;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .file-hint {
+      font-size: 14px;
+      color: #D6BCF0;
+    }
+
+    .preview-container {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .selected-files {
+      background: rgba(255, 168, 214, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      color: #ffa8d6;
+      font-weight: 500;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+    }
+
+    .preview-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      background: #f0f0f0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .preview-item:hover {
+      transform: scale(1.05);
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-item .filename {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 10px;
+      padding: 2px 4px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .filename-preview {
+      background: rgba(145, 199, 255, 0.1);
+      border: 1px solid #91c7ff;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+      color: #91c7ff;
+      display: none;
+      text-align: center;
+    }
+
+    .options-group {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #8B7CB8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-wrapper:hover {
+      color: #ffa8d6;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #ffa8d6;
+      cursor: pointer;
+    }
+
+    .submit-button {
+      background: linear-gradient(135deg, #ffa8d6 0%, #badf93 100%);
+      color: white;
+      border: none;
+      padding: 18px 36px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      margin-top: 32px;
+    }
+
+    .submit-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .submit-button:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 12px 24px rgba(255, 168, 214, 0.4);
+      background: linear-gradient(135deg, #ff91e9 0%, #a8e6cf 100%);
+      font-size: 17px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .submit-button:hover::before {
+      left: 100%;
+    }
+
+    .submit-button:active {
+      transform: translateY(0) scale(1);
+    }
+
+    .submit-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .progress-container {
+      margin-top: 24px;
+      display: none;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #FFE4F3;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 168, 214, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffa8d6, #badf93);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .progress-text {
+      text-align: center;
+      font-size: 14px;
+      color: #8B7CB8;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .footer {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #FFE4F3;
+      font-size: 13px;
+      color: #B794C6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .footer::before {
+      content: "⚡";
+      font-size: 16px;
+    }
+
+    .footer a {
+      color: #ffa8d6;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .footer a:hover {
+      color: #ff91e9;
+      text-shadow: 0 0 8px rgba(255, 168, 214, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .features {
+      background: rgba(186, 223, 147, 0.1);
+      border: 1px solid #badf93;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+      font-size: 14px;
+      color: #badf93;
+      text-align: left;
+    }
+
+    .features strong {
+      color: #8B7CB8;
+      display: block;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .features ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .features li {
+      padding: 4px 0;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .features li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #badf93;
+      font-weight: bold;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 32px 24px;
+        margin: 0 16px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .icon {
+        width: 56px;
+        height: 56px;
+      }
+
+      .icon::before {
+        font-size: 20px;
+      }
+
+      .options-group {
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .pattern-buttons {
+        justify-content: center;
+      }
+
+      .file-input-wrapper {
+        padding: 32px 16px;
+        min-height: 120px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: linear-gradient(135deg, #4A4A4A 0%, #6B6B6B 100%);
+      }
+
+      .container {
+        background: rgba(60, 60, 60, 0.95);
+        border: 1px solid rgba(255, 168, 214, 0.2);
+      }
+
+      h1 {
+        background: linear-gradient(135deg, #ffb3e6, #c7e9ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: #E6B8F0;
+      }
+
+      .form-group label {
+        color: #E6B8F0;
+      }
+
+      input[type="text"] {
+        background: #505050;
+        border-color: #707070;
+        color: #f7fafc;
+      }
+
+      input[type="text"]:focus {
+        border-color: #ffa8d6;
+      }
+
+      .file-input-wrapper {
+        background: #505050;
+        border-color: #707070;
+      }
+
+      .file-input-wrapper:hover {
+        background: #606060;
+      }
+
+      .file-input-text {
+        color: #E6B8F0;
+      }
+
+      .file-hint {
+        color: #C1A9DB;
+      }
+
+      .footer {
+        border-top-color: #707070;
+        color: #E6B8F0;
+      }
+
+      .progress-container {
+        background: rgba(80, 80, 80, 0.8);
+        border-color: #707070;
+      }
+
+      .features {
+        background: rgba(80, 80, 80, 0.5);
+        border-color: #707070;
+      }
+    }
+
+    *:focus-visible {
+      outline: 2px solid #ffa8d6;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon" aria-hidden="true"></div>
+      <h1>이미지 파일명 일괄 변경기</h1>
+      <div class="subtitle">클라이언트에서 바로 처리하는 빠른 파일명 변경</div>
+    </div>
+
+    <form id="renameForm">
+      <div class="form-group">
+        <label for="prefix">파일명 입력</label>
+        <div class="input-wrapper">
+          <input type="text" id="prefix" placeholder="예: 서울맛집_" required>
+        </div>
+        <div class="pattern-buttons">
+          <button type="button" class="pattern-btn" data-pattern="서울맛집_">서울맛집_</button>
+          <button type="button" class="pattern-btn" data-pattern="용인빵집_">용인빵집_</button>
+          <button type="button" class="pattern-btn" data-pattern="제주여행_">제주여행_</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="images">이미지 파일 선택</label>
+        <div class="file-input-wrapper" role="button" tabindex="0">
+          <input type="file" id="images" multiple accept="image/*,.heic,.HEIC">
+          <div class="file-input-content">
+            <div class="file-input-text">파일을 여기에 드래그하거나 클릭하여 선택</div>
+            <div class="file-hint">JPG, PNG, GIF, WebP, HEIC 지원</div>
+          </div>
+        </div>
+        <div class="preview-container" id="previewContainer">
+          <div class="selected-files" id="selectedFiles"></div>
+          <div class="preview-grid" id="previewGrid"></div>
+        </div>
+        <div class="filename-preview" id="filenamePreview">
+          <strong>변경될 파일명 예시:</strong>
+          <div id="previewText"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-button" id="submitBtn">
+        파일명 변경하고 ZIP 다운로드
+      </button>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">파일 처리 중...</div>
+      </div>
+    </form>
+
+    <div class="footer">
+      Powered by <a href="https://github.com/minjipi/Image-Renamer" target="_blank" rel="noopener noreferrer">토찌</a>
+    </div>
+  </div>
+
+  <script>
+    // DOM 요소들
+    const form = document.getElementById('renameForm');
+    const prefixInput = document.getElementById('prefix');
+    const fileInput = document.getElementById('images');
+    const previewGrid = document.getElementById('previewGrid');
+    const previewContainer = document.getElementById('previewContainer');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const filenamePreview = document.getElementById('filenamePreview');
+    const previewText = document.getElementById('previewText');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const fileWrapper = document.querySelector('.file-input-wrapper');
+
+    let selectedFilesArray = [];
+
+    // 패턴 버튼 클릭 이벤트
+    document.querySelectorAll('.pattern-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.pattern-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        prefixInput.value = btn.dataset.pattern;
+        prefixInput.focus();
+        updateFilenamePreview();
+      });
+    });
+
+    // 파일명 미리보기 업데이트
+    function updateFilenamePreview() {
+      if (selectedFilesArray.length === 0) {
+        filenamePreview.style.display = 'none';
+        return;
+      }
+
+      const prefix = prefixInput.value;
+
+      let examples = [];
+
+      selectedFilesArray.slice(0, 3).forEach((file, index) => {
+        let newName = prefix;
+        if (newName.endsWith('_')) {
+          newName = newName.slice(0, -1);
+        }
+        const ext = file.name.split('.').pop();
+        examples.push(`${newName}_${String(index + 1).padStart(3, '0')}.${ext}`);
+      });
+
+      if (selectedFilesArray.length > 3) {
+        examples.push(`... 외 ${selectedFilesArray.length - 3}개`);
+      }
+
+      previewText.innerHTML = examples.join('<br>');
+      filenamePreview.style.display = 'block';
+    }
+
+    // 파일 미리보기 생성
+    function createPreview(file) {
+      return new Promise((resolve) => {
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+
+        const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+        if (fileExtension === '.heic' || fileExtension === '.heif') {
+          div.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666;">
+              <div style="font-size: 24px; margin-bottom: 4px;">📱</div>
+              <div style="font-size: 10px;">HEIC</div>
+            </div>
+            <div class="filename">${file.name}</div>
+          `;
+          resolve(div);
+        } else {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            div.innerHTML = `
+              <img src="${e.target.result}" alt="${file.name}">
+              <div class="filename">${file.name}</div>
+            `;
+            resolve(div);
+          };
+          reader.onerror = () => {
+            div.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666;">
+                <div style="font-size: 24px; margin-bottom: 4px;">🖼️</div>
+                <div style="font-size: 10px;">이미지</div>
+              </div>
+              <div class="filename">${file.name}</div>
+            `;
+            resolve(div);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // 파일 처리
+    async function updatePreview(files) {
+      previewGrid.innerHTML = '';
+      selectedFilesArray = Array.from(files);
+      selectedFiles.textContent = `선택된 파일: ${files.length}개`;
+      previewContainer.style.display = 'block';
+      for (const file of Array.from(files).slice(0, 12)) {
+        const preview = await createPreview(file);
+        previewGrid.appendChild(preview);
+      }
+
+      if (files.length > 12) {
+        const moreDiv = document.createElement('div');
+        moreDiv.className = 'preview-item';
+        moreDiv.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666;">+${files.length - 12}</div>`;
+        previewGrid.appendChild(moreDiv);
+      }
+
+      updateFilenamePreview();
+    }
+
+    // 드래그 앤 드롭 이벤트
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      fileWrapper.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      fileWrapper.addEventListener(eventName, () => {
+        fileWrapper.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      fileWrapper.addEventListener(eventName, () => {
+        fileWrapper.classList.remove('dragover');
+      });
+    });
+
+    fileWrapper.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files).filter(file =>
+        file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic')
+      );
+      if (files.length > 0) {
+        updatePreview(files);
+        const dt = new DataTransfer();
+        files.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+      }
+    });
+
+    // 파일 선택 이벤트
+    fileInput.addEventListener('change', (e) => {
+      updatePreview(e.target.files);
+    });
+
+    // 접두어 입력 시 미리보기 업데이트
+    prefixInput.addEventListener('input', updateFilenamePreview);
+
+    // 키보드 접근성
+    fileWrapper.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    // 폼 제출 이벤트 (클라이언트 사이드 처리)
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const prefix = prefixInput.value.trim();
+      const files = fileInput.files;
+
+      if (!prefix || files.length === 0) {
+        alert('접두어와 파일을 모두 선택해주세요.');
+        return;
+      }
+
+      // UI 업데이트
+      submitBtn.disabled = true;
+      submitBtn.textContent = '처리 중...';
+      progressContainer.style.display = 'block';
+
+      try {
+        const zip = new JSZip();
+        // const addNumbers = document.getElementById('addNumbers').checked;
+        let processedCount = 0;
+
+        // 파일 처리
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const ext = file.name.split('.').pop();
+
+          const cleanPrefix = prefix.endsWith('_') ? prefix.slice(0, -1) : prefix;
+          const filename = `${cleanPrefix}_${String(i + 1).padStart(3, '0')}.${ext}`;
+
+          const blob = await file.arrayBuffer();
+          zip.file(filename, blob);
+
+          // 진행률 업데이트
+          processedCount++;
+          const progress = (processedCount / files.length) * 80; // 80%까지는 파일 처리
+          progressFill.style.width = progress + '%';
+          progressText.textContent = `파일 처리 중... ${Math.round(progress)}% (${processedCount}/${files.length})`;
+
+          // UI 업데이트를 위한 잠깐 대기
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        // ZIP 생성
+        progressText.textContent = 'ZIP 파일 생성 중...';
+        progressFill.style.width = '90%';
+
+        const zipBlob = await zip.generateAsync({
+          type: 'blob',
+          compression: 'DEFLATE',
+          compressionOptions: { level: 6 }
+        });
+
+        // 다운로드
+        progressText.textContent = '다운로드 준비 중...';
+        progressFill.style.width = '100%';
+
+        const cleanPrefix = prefix.endsWith('_') ? prefix.slice(0, -1) : prefix;
+        saveAs(zipBlob, `${cleanPrefix}_images.zip`);
+
+        // 성공 메시지
+        setTimeout(() => {
+          progressText.textContent = `완료! ${files.length}개 파일이 성공적으로 처리되었습니다.`;
+
+          setTimeout(() => {
+            // UI 리셋
+            submitBtn.disabled = false;
+            submitBtn.textContent = '파일명 변경하고 ZIP 다운로드';
+            progressContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+          }, 3000);
+        }, 500);
+
+      } catch (error) {
+        console.error('처리 중 오류 발생:', error);
+        alert('파일 처리 중 오류가 발생했습니다: ' + error.message);
+
+        // UI 리셋
+        submitBtn.disabled = false;
+        submitBtn.textContent = '파일명 변경하고 ZIP 다운로드';
+        progressContainer.style.display = 'none';
+        progressFill.style.width = '0%';
+      }
+    });
+
+    // 입력 포커스 효과
+    prefixInput.addEventListener('focus', () => {
+      prefixInput.parentElement.style.transform = 'translateY(-2px)';
+    });
+
+    prefixInput.addEventListener('blur', () => {
+      prefixInput.parentElement.style.transform = 'translateY(0)';
+    });
+  </script>
+</body>
+</html>
