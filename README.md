@@ -2,12 +2,10 @@
 
 > 프라이버시 보장! 업로드 파일이 서버에 저장되지 않는 이미지 파일명 일괄 변경 도구. 
 
-<img width="700" alt="Image Renamer Pro - 메인 화면" src="https://github.com/user-attachments/assets/3a5f5a70-1854-4ddb-9ac9-bbc43bd8b745" />
-
+<img alt="Image" src="https://github.com/user-attachments/assets/ec1e4c4a-b310-417a-af59-2b3693169153" />
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://github.com)
-
 
 
 
@@ -24,6 +22,12 @@
 - **드래그 앤 드롭**: 편리한 파일 업로드
 - **실시간 미리보기**: 선택한 파일들의 썸네일 표시
 - **자동 번호 추가**: 파일명_001, 파일명_002 형식으로 자동 번호 부여
+
+### 다운로드 옵션
+- **ZIP 다운로드**: 모든 파일을 압축하여 한 번에 다운로드
+- **개별 파일 다운로드**: 각 파일을 하나씩 순차적으로 다운로드
+ - 브라우저 다운로드 폴더에 개별 파일로 저장 (모바일에서도 가능)
+ - 500ms 간격으로 순차 다운로드하여 브라우저 안정성 확보
 
 ### 지원 파일 형식
 - **JPG/JPEG**: 가장 일반적인 이미지 형식
@@ -54,8 +58,8 @@
 3. **미리보기 확인**: 변경될 파일명을 미리 확인하세요.
    - `서울맛집_001.jpg`, `서울맛집_002.png` 형식
 
-4. **다운로드**: "파일명 변경하고 ZIP 다운로드" 버튼 클릭
-   - 자동으로 ZIP 파일이 다운로드됩니다.
+4. **다운로드**: "파일명 변경하고 다운로드" 버튼 클릭
+   - 자동으로 파일이 다운로드됩니다.
 
 
 
