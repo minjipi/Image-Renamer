@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Img Renamer Pro</title>
+  <title>File Renamer Pro</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
@@ -84,7 +84,7 @@
     }
 
     .icon::before {
-      content: "💻";
+      content: "📁";
       font-size: 24px;
     }
 
@@ -239,6 +239,16 @@
       text-align: center;
     }
 
+    .file-type-summary {
+      background: rgba(145, 199, 255, 0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #91c7ff;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
     .preview-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -258,6 +268,10 @@
       background: #f0f0f0;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .preview-item:hover {
@@ -268,6 +282,18 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .preview-item .file-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .preview-item .file-ext {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
     }
 
     .preview-item .filename {
@@ -540,34 +566,36 @@
   <div class="container">
     <div class="header">
       <div class="icon" aria-hidden="true"></div>
-      <h1>이미지 파일명 일괄 변경기</h1>
-      <div class="subtitle">프라이버시 보장! 안전한 파일명 변경기</div>
+      <h1>파일명 일괄 변경기</h1>
+      <div class="subtitle">프라이버시 보장! 모든 파일 형식 지원</div>
     </div>
 
     <form id="renameForm">
       <div class="form-group">
         <label for="prefix">파일명 입력</label>
         <div class="input-wrapper">
-          <input type="text" id="prefix" placeholder="예: 서울맛집_" required>
+          <input type="text" id="prefix" placeholder="예: 문서_" required>
         </div>
         <div class="pattern-buttons">
-          <button type="button" class="pattern-btn" data-pattern="서울맛집_">서울맛집_</button>
-          <button type="button" class="pattern-btn" data-pattern="용인빵집_">용인빵집_</button>
-          <button type="button" class="pattern-btn" data-pattern="제주여행_">제주여행_</button>
+          <button type="button" class="pattern-btn" data-pattern="문서_">문서_</button>
+          <button type="button" class="pattern-btn" data-pattern="사진_">사진_</button>
+          <button type="button" class="pattern-btn" data-pattern="자료_">자료_</button>
+          <button type="button" class="pattern-btn" data-pattern="backup_">backup_</button>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="images">이미지 파일 선택</label>
+        <label for="files">파일 선택</label>
         <div class="file-input-wrapper" role="button" tabindex="0">
-          <input type="file" id="images" multiple accept="image/*,.heic,.HEIC">
+          <input type="file" id="files" multiple>
           <div class="file-input-content">
             <div class="file-input-text">파일을 여기에 드래그하거나 클릭하여 선택</div>
-            <div class="file-hint">JPG, PNG, GIF, WebP, HEIC 지원</div>
+            <div class="file-hint">모든 파일 형식 지원 (이미지, 문서, 동영상, 압축파일 등)</div>
           </div>
         </div>
         <div class="preview-container" id="previewContainer">
           <div class="selected-files" id="selectedFiles"></div>
+          <div class="file-type-summary" id="fileTypeSummary"></div>
           <div class="preview-grid" id="previewGrid"></div>
         </div>
         <div class="filename-preview" id="filenamePreview">
@@ -602,10 +630,11 @@
     // DOM 요소들
     const form = document.getElementById('renameForm');
     const prefixInput = document.getElementById('prefix');
-    const fileInput = document.getElementById('images');
+    const fileInput = document.getElementById('files');
     const previewGrid = document.getElementById('previewGrid');
     const previewContainer = document.getElementById('previewContainer');
     const selectedFiles = document.getElementById('selectedFiles');
+    const fileTypeSummary = document.getElementById('fileTypeSummary');
     const filenamePreview = document.getElementById('filenamePreview');
     const previewText = document.getElementById('previewText');
     const submitBtn = document.getElementById('submitBtn');
@@ -616,6 +645,54 @@
     const fileWrapper = document.querySelector('.file-input-wrapper');
 
     let selectedFilesArray = [];
+
+    // 파일 타입에 따른 아이콘 반환
+    function getFileIcon(filename) {
+      const ext = filename.toLowerCase().split('.').pop();
+      const iconMap = {
+        // 이미지 파일
+        'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'bmp': '🖼️', 'webp': '🖼️', 'svg': '🖼️', 'heic': '📱', 'heif': '📱',
+        // 문서 파일
+        'pdf': '📄', 'doc': '📝', 'docx': '📝', 'txt': '📄', 'rtf': '📄', 'odt': '📄',
+        // 스프레드시트
+        'xls': '📊', 'xlsx': '📊', 'csv': '📊', 'ods': '📊',
+        // 프레젠테이션
+        'ppt': '📊', 'pptx': '📊', 'odp': '📊',
+        // 압축 파일
+        'zip': '🗜️', 'rar': '🗜️', '7z': '🗜️', 'tar': '🗜️', 'gz': '🗜️',
+        // 동영상 파일
+        'mp4': '🎬', 'avi': '🎬', 'mkv': '🎬', 'mov': '🎬', 'wmv': '🎬', 'flv': '🎬', 'webm': '🎬',
+        // 오디오 파일
+        'mp3': '🎵', 'wav': '🎵', 'flac': '🎵', 'aac': '🎵', 'ogg': '🎵', 'm4a': '🎵',
+        // 코드 파일
+        'js': '💻', 'html': '💻', 'css': '💻', 'py': '💻', 'java': '💻', 'cpp': '💻', 'c': '💻', 'php': '💻', 'rb': '💻', 'go': '💻',
+        // 폰트 파일
+        'ttf': '🔤', 'otf': '🔤', 'woff': '🔤', 'woff2': '🔤',
+        // 기타
+        'exe': '⚙️', 'msi': '⚙️', 'dmg': '⚙️', 'deb': '⚙️', 'rpm': '⚙️'
+      };
+      return iconMap[ext] || '📄';
+    }
+
+    // 파일 타입 분류
+    function getFileCategory(filename) {
+      const ext = filename.toLowerCase().split('.').pop();
+      const categories = {
+        image: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'heic', 'heif'],
+        document: ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'csv', 'ods', 'ppt', 'pptx', 'odp'],
+        video: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'],
+        audio: ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+        archive: ['zip', 'rar', '7z', 'tar', 'gz'],
+        code: ['js', 'html', 'css', 'py', 'java', 'cpp', 'c', 'php', 'rb', 'go'],
+        font: ['ttf', 'otf', 'woff', 'woff2'],
+        executable: ['exe', 'msi', 'dmg', 'deb', 'rpm']
+      };
+
+      for (const [category, extensions] of Object.entries(categories)) {
+        if (extensions.includes(ext)) return category;
+      }
+      return 'other';
+    }
 
     // 패턴 버튼 클릭 이벤트
     document.querySelectorAll('.pattern-btn').forEach(btn => {
@@ -656,23 +733,44 @@
       filenamePreview.style.display = 'block';
     }
 
+    // 파일 타입 요약 업데이트
+    function updateFileTypeSummary(files) {
+      const categories = {};
+      files.forEach(file => {
+        const category = getFileCategory(file.name);
+        categories[category] = (categories[category] || 0) + 1;
+      });
+
+      const categoryNames = {
+        image: '이미지',
+        document: '문서',
+        video: '동영상',
+        audio: '오디오',
+        archive: '압축파일',
+        code: '코드',
+        font: '폰트',
+        executable: '실행파일',
+        other: '기타'
+      };
+
+      const summary = Object.entries(categories)
+        .map(([category, count]) => `${categoryNames[category]}: ${count}개`)
+        .join(' | ');
+
+      fileTypeSummary.textContent = summary;
+    }
+
     // 파일 미리보기 생성
     function createPreview(file) {
       return new Promise((resolve) => {
         const div = document.createElement('div');
         div.className = 'preview-item';
 
-        const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-        if (fileExtension === '.heic' || fileExtension === '.heif') {
-          div.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666;">
-              <div style="font-size: 24px; margin-bottom: 4px;">📱</div>
-              <div style="font-size: 10px;">HEIC</div>
-            </div>
-            <div class="filename">${file.name}</div>
-          `;
-          resolve(div);
-        } else {
+        const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.') + 1);
+        const icon = getFileIcon(file.name);
+
+        // 이미지 파일인 경우 실제 이미지 미리보기 시도
+        if (file.type.startsWith('image/') && !['heic', 'heif'].includes(fileExtension)) {
           const reader = new FileReader();
           reader.onload = (e) => {
             div.innerHTML = `
@@ -682,16 +780,23 @@
             resolve(div);
           };
           reader.onerror = () => {
+            // 이미지 로드 실패 시 아이콘으로 대체
             div.innerHTML = `
-              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666;">
-                <div style="font-size: 24px; margin-bottom: 4px;">🖼️</div>
-                <div style="font-size: 10px;">이미지</div>
-              </div>
+              <div class="file-icon">${icon}</div>
+              <div class="file-ext">${fileExtension}</div>
               <div class="filename">${file.name}</div>
             `;
             resolve(div);
           };
           reader.readAsDataURL(file);
+        } else {
+          // 이미지가 아닌 파일은 아이콘으로 표시
+          div.innerHTML = `
+            <div class="file-icon">${icon}</div>
+            <div class="file-ext">${fileExtension}</div>
+            <div class="filename">${file.name}</div>
+          `;
+          resolve(div);
         }
       });
     }
@@ -702,6 +807,9 @@
       selectedFilesArray = Array.from(files);
       selectedFiles.textContent = `선택된 파일: ${files.length}개`;
       previewContainer.style.display = 'block';
+
+      // 파일 타입 요약 업데이트
+      updateFileTypeSummary(Array.from(files));
 
       for (const file of Array.from(files).slice(0, 12)) {
         const preview = await createPreview(file);
@@ -739,9 +847,7 @@
     });
 
     fileWrapper.addEventListener('drop', (e) => {
-      const files = Array.from(e.dataTransfer.files).filter(file =>
-        file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic')
-      );
+      const files = Array.from(e.dataTransfer.files);
       if (files.length > 0) {
         updatePreview(files);
         const dt = new DataTransfer();
@@ -893,7 +999,7 @@
         progressFill.style.width = '100%';
 
         const cleanPrefix = prefix.endsWith('_') ? prefix.slice(0, -1) : prefix;
-        saveAs(zipBlob, `${cleanPrefix}_images.zip`);
+        saveAs(zipBlob, `${cleanPrefix}_files.zip`);
 
         // 성공 메시지
         setTimeout(() => {
